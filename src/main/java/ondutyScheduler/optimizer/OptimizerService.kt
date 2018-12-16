@@ -3,6 +3,7 @@ package ondutyScheduler.optimizer
 import com.google.ortools.sat.CpModel
 import com.google.ortools.sat.CpSolver
 import com.google.ortools.sat.IntVar
+import ondutyScheduler.util.intersectingTimes
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.util.*
@@ -18,15 +19,7 @@ class TimeSlot(
         val ending: LocalDateTime,
         val isPayed: Boolean = true //TODO a bit ugly here in TimeSlot
 ) {
-    fun intersects(other: TimeSlot) =
-            intersectThis(other) || other.intersectThis(this) ||
-                    (starting.isAfter(other.starting) && starting.isBefore(other.ending) &&
-                            ending.isAfter(other.starting) && ending.isBefore(other.ending)) ||
-                    this.equals(other)
-
-    private fun intersectThis(other: TimeSlot) =
-            (starting.isAfter(other.starting) && starting.isBefore(other.ending)) ||
-                    (ending.isAfter(other.starting) && ending.isBefore(other.ending))
+    fun intersects(other: TimeSlot) = intersectingTimes(starting, ending, other.starting, other.ending)
 }
 
 data class Employee(

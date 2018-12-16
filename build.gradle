@@ -50,8 +50,10 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" // Required for Kotlin integration
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.+"
     compile "org.springframework.boot:spring-boot-starter-web"
     compile 'com.google.protobuf:protobuf-java:3.6.1'
+    compile 'org.springframework.boot:spring-boot-starter-webflux'
     compile files("optimization/lib/com.google.ortools.jar")
     testImplementation(
             'org.junit.jupiter:junit-jupiter-api:5.1.0'
