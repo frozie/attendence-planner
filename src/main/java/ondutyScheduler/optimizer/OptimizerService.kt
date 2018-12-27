@@ -2,8 +2,10 @@ package ondutyScheduler.optimizer
 
 import com.google.ortools.sat.CpModel
 import com.google.ortools.sat.CpSolver
+import com.google.ortools.sat.CpSolverStatus
 import com.google.ortools.sat.IntVar
 import ondutyScheduler.util.intersectingTimes
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.util.*
@@ -14,7 +16,7 @@ import kotlin.math.max
  * @author Frowin Ziegler, MaibornWolff GmbH
  */
 
-class TimeSlot(
+data class TimeSlot(
         val starting: LocalDateTime,
         val ending: LocalDateTime,
         val isPayed: Boolean = true //TODO a bit ugly here in TimeSlot
@@ -54,7 +56,11 @@ data class MappedEmployeeToTimeSlot(
 data class OptimizerOutput(
         val normalSchedule: List<MappedEmployeeToTimeSlot>,
         val escalationSchedule: List<MappedEmployeeToTimeSlot>
-)
+) {
+    companion object {
+        fun noSolution() = OptimizerOutput(emptyList(), emptyList())
+    }
+}
 
 class SatSum(val elements: Array<IntVar>) {
     fun toIntVar(model: CpModel, bounds: Long): IntVar {
@@ -72,18 +78,19 @@ data class Cost(
 @Service
 class OptimizerService {
 
-    private val BOUNDS = 10000L;
+    private val logger = LoggerFactory.getLogger(OptimizerService::class.java)
+
+    private val BOUNDS = 10000L
 
     fun calculateSolution(input: OptimizerInput): OptimizerOutput {
         System.loadLibrary("jniortools")
-        //val solver = Solver("scheduleOptimization")
         val model = CpModel()
 
         val assignedNormalTimeSlots = makeAssignmentModel(model, input.normalEmployees, input.normalTimeSlots)
         val assignedEscalationTimeSlots = makeAssignmentModel(model, input.escalationEmployees, input.escalationTimeSlots)
 
         addConstraintsNonAvailability(model, assignedNormalTimeSlots, input.normalTimeSlots, input.normalEmployees, true)
-        addConstraintsNonAvailability(model, assignedNormalTimeSlots, input.normalTimeSlots, input.normalEmployees, false)
+        addConstraintsNonAvailability(model, assignedEscalationTimeSlots, input.escalationTimeSlots, input.escalationEmployees, false)
         addConstraintEachTimeSlotIsAssignedExactlyToOneEmployee(model, assignedNormalTimeSlots)
         addConstraintEachTimeSlotIsAssignedExactlyToOneEmployee(model, assignedEscalationTimeSlots)
         addConstraintEveryoneNeedsAnEscalation(model, assignedNormalTimeSlots, assignedEscalationTimeSlots, input.normalEmployees, input.escalationEmployees)
@@ -112,11 +119,8 @@ class OptimizerService {
         model.minimize(optimizeProduct)
 
         val solver = CpSolver()
-        val solvedStatus = solver.solve(model)
-        println(solvedStatus.name)
-        return OptimizerOutput(
-                readSolutionForAssignment(solver, assignedNormalTimeSlots),
-                readSolutionForAssignment(solver, assignedEscalationTimeSlots))
+        val solverStatus = solver.solve(model)
+        return produceSolution(solver, solverStatus, assignedNormalTimeSlots, assignedEscalationTimeSlots)
     }
 
     private fun makeAssignmentModel(model: CpModel, employees: Collection<Employee>, timeSlots: Collection<TimeSlot>): HashMap<MappedEmployeeToTimeSlot, IntVar> {
@@ -156,7 +160,7 @@ class OptimizerService {
                     if (timeSlot.intersects(nonAvailableTimeSlot)) {
                         val solverVar = assignmentModel[MappedEmployeeToTimeSlot(timeSlot, employee)]
                         model.addEquality(solverVar, 0)
-                        println("make nonavailability: " + MappedEmployeeToTimeSlot(timeSlot, employee))
+                        logger.trace("make nonavailability: " + MappedEmployeeToTimeSlot(timeSlot, employee))
                     }
                 }
             }
@@ -222,6 +226,17 @@ class OptimizerService {
         model.addMaxEquality(maxTargetMissOverall, allTargetMisses.toTypedArray())
 
         return Cost(maxTargetMissOverall, relevantTimeSlots.size)
+    }
+
+    private fun produceSolution(solver: CpSolver, solverStatus: CpSolverStatus, assignedNormalTimeSlots: HashMap<MappedEmployeeToTimeSlot, IntVar>, assignedEscalationTimeSlots: HashMap<MappedEmployeeToTimeSlot, IntVar>): OptimizerOutput {
+        logger.info("solved with status {}", solverStatus.name)
+        return if (solverStatus == CpSolverStatus.OPTIMAL || solverStatus == CpSolverStatus.FEASIBLE) {
+            OptimizerOutput(
+                    readSolutionForAssignment(solver, assignedNormalTimeSlots),
+                    readSolutionForAssignment(solver, assignedEscalationTimeSlots))
+        } else {
+            OptimizerOutput.noSolution();
+        }
     }
 
     private fun readSolutionForAssignment(solver: CpSolver, assignmentModel: HashMap<MappedEmployeeToTimeSlot, IntVar>): List<MappedEmployeeToTimeSlot> {
