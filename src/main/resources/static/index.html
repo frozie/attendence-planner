@@ -1,0 +1,73 @@
+<html>
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+
+<div id="app">
+    <h1>{{ employeeName }}</h1>
+    Nicht verf&uumlgbar an folgenden Terminen:
+    <ul>
+        <li>Start: <input v-model="newNonAvailabilityNotice.StartingAt"/> Ende: <input v-model="newNonAvailabilityNotice.EndingAt"/>
+            <div v-for="scheduleId in allowedSchedules">
+                <input type="checkbox" v-bind:id="'c-schedule-'+scheduleId" v-bind:value="scheduleId" v-model="newNonAvailabilityNotice.RegardingSchedules">
+                <label v-bind:for="'c-schedule-'+scheduleId">{{ allExistingSchedules.filter(s => s.Id === scheduleId)[0].Name }}</label>
+            </div>
+            {{newNonAvailabilityNotice.RegardingSchedules}}
+            Kommentar: <input v-model="newNonAvailabilityNotice.Comment"/> <button v-on:click="addNonAvailabilityNotice(newNonAvailabilityNotice)">Hinzuf&uumlgen</button> </li>
+        <li v-for="nonAvailabilityNotice in nonAvailabilityNotices">
+            {{nonAvailabilityNotice.StartingAt}} bis {{nonAvailabilityNotice.EndingAt}} f&uumlr
+            <div v-for="scheduleId in nonAvailabilityNotice.RegardingSchedules">
+                <input type="checkbox" disabled v-bind:id="'schedule-'+scheduleId" v-bind:value="scheduleId" v-model="nonAvailabilityNotice.RegardingSchedules">
+                <label v-bind:for="'schedule-'+scheduleId">{{ allExistingSchedules.filter(s => s.Id === scheduleId)[0].Name }}</label>
+            </div>
+            Kommentar: {{ nonAvailabilityNotice.Comment }}
+            <button v-on:click="deleteNonAvailabilityNotice(nonAvailabilityNotice.Id)">l&oumlschen</button>
+        </li>
+    </ul>
+</div>
+
+<script>
+    const app = new Vue({
+        el: '#app',
+        data: {
+            nonAvailabilityNotices: [],
+            employeeName: 'test',
+            newNonAvailabilityNotice: {'RegardingSchedules':[]},
+            allExistingSchedules: [],
+            allowedSchedules: []
+        },
+        methods: {
+            addNonAvailabilityNotice(newNonAvailabilityNotice) {
+                console.log(JSON.stringify(newNonAvailabilityNotice));
+                fetch('http://localhost:8000/employee/1/nonAvailabilityNotices', {
+                    method: 'PUT',
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(newNonAvailabilityNotice)})
+                    .then(resp => resp.json())
+                    .then(json => {
+                        this.nonAvailabilityNotices = json;
+                    })
+            },
+            deleteNonAvailabilityNotice(id) {
+                fetch('http://localhost:8000/employee/1/nonAvailabilityNotices/' + id,{
+                    method: 'DELETE'})
+                    .then(resp => resp.json())
+                    .then(json => {
+                        this.nonAvailabilityNotices = json;
+                    })
+            }
+        },
+        created () {
+            fetch('http://localhost:8000/employee/1')
+                .then(resp => resp.json())
+                .then(json => {
+                    this.nonAvailabilityNotices = json.NonAvailabilityNotices;
+                    this.employeeName = json.Name;
+                    this.allExistingSchedules = json.AllExistingSchedules;
+                    this.allowedSchedules = json.AllowedSchedules;
+                })
+        }
+    });
+</script>
+
+</html>
