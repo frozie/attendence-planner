@@ -3,25 +3,31 @@
 
 <div id="app">
     <h1>{{ employeeName }}</h1>
-    Nicht verf&uumlgbar an folgenden Terminen:
-    <ul>
-        <li>Start: <input v-model="newNonAvailabilityNotice.startingAt"/> Ende: <input v-model="newNonAvailabilityNotice.endingAt"/>
-            <div v-for="scheduleId in allowedSchedules">
-                <input type="checkbox" v-bind:id="'c-schedule-'+scheduleId" v-bind:value="scheduleId" v-model="newNonAvailabilityNotice.regardingSchedules">
-                <label v-bind:for="'c-schedule-'+scheduleId">{{ allExistingSchedules.filter(s => s.id === scheduleId)[0].name }}</label>
-            </div>
-            {{newNonAvailabilityNotice.regardingSchedules}}
-            Kommentar: <input v-model="newNonAvailabilityNotice.comment"/> <button v-on:click="addNonAvailabilityNotice(newNonAvailabilityNotice)">Hinzuf&uumlgen</button> </li>
-        <li v-for="nonAvailabilityNotice in nonAvailabilityNotices">
-            {{nonAvailabilityNotice.startingAt}} bis {{nonAvailabilityNotice.endingAt}} f&uumlr
-            <div v-for="scheduleId in nonAvailabilityNotice.regardingSchedules">
-                <input type="checkbox" disabled v-bind:id="'schedule-'+scheduleId" v-bind:value="scheduleId" v-model="nonAvailabilityNotice.regardingSchedules">
-                <label v-bind:for="'schedule-'+scheduleId">{{ allExistingSchedules.filter(s => s.id === scheduleId)[0].name }}</label>
-            </div>
-            Kommentar: {{ nonAvailabilityNotice.comment }}
-            <button v-on:click="deleteNonAvailabilityNotice(nonAvailabilityNotice.id)">l&oumlschen</button>
-        </li>
-    </ul>
+    <div>
+        Wunscharbeitspr&aumlferenz mindestens <input v-model="workloadPreference.minWorkload"/>% und maximal <input v-model="workloadPreference.maxWorkload"/>%.
+        <button v-on:click="saveWorkloadPreference(workloadPreference)">Pr&aumlferenz speichern</button>
+    </div>
+    <div>
+        Nicht verf&uumlgbar an folgenden Terminen:
+        <ul>
+            <li>Start: <input v-model="newNonAvailabilityNotice.startingAt"/> Ende: <input v-model="newNonAvailabilityNotice.endingAt"/>
+                <div v-for="scheduleId in allowedSchedules">
+                    <input type="checkbox" v-bind:id="'c-schedule-'+scheduleId" v-bind:value="scheduleId" v-model="newNonAvailabilityNotice.regardingSchedules">
+                    <label v-bind:for="'c-schedule-'+scheduleId">{{ allExistingSchedules.filter(s => s.id === scheduleId)[0].name }}</label>
+                </div>
+                {{newNonAvailabilityNotice.regardingSchedules}}
+                Kommentar: <input v-model="newNonAvailabilityNotice.comment"/> <button v-on:click="addNonAvailabilityNotice(newNonAvailabilityNotice)">Hinzuf&uumlgen</button> </li>
+            <li v-for="nonAvailabilityNotice in nonAvailabilityNotices">
+                {{nonAvailabilityNotice.startingAt}} bis {{nonAvailabilityNotice.endingAt}} f&uumlr
+                <div v-for="scheduleId in nonAvailabilityNotice.regardingSchedules">
+                    <input type="checkbox" disabled v-bind:id="'schedule-'+scheduleId" v-bind:value="scheduleId" v-model="nonAvailabilityNotice.regardingSchedules">
+                    <label v-bind:for="'schedule-'+scheduleId">{{ allExistingSchedules.filter(s => s.id === scheduleId)[0].name }}</label>
+                </div>
+                Kommentar: {{ nonAvailabilityNotice.comment }}
+                <button v-on:click="deleteNonAvailabilityNotice(nonAvailabilityNotice.id)">l&oumlschen</button>
+            </li>
+        </ul>
+    </div>
 </div>
 
 <script>
@@ -55,6 +61,18 @@
                     .then(json => {
                         this.nonAvailabilityNotices = json;
                     })
+            },
+            saveWorkloadPreference(workloadPreference) {
+                fetch('http://localhost:8080/employee/1/workloadPreference', {
+                    method: 'POST',
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(workloadPreference)})
+                    .then(resp => resp.json())
+                    .then(json => {
+                            this.workloadPreference = json;
+                    })
             }
         },
         created () {
@@ -65,6 +83,7 @@
                     this.employeeName = json.name;
                     this.allExistingSchedules = json.allExistingSchedules;
                     this.allowedSchedules = json.allowedSchedules;
+                    this.workloadPreference = json.workloadPreference
                 })
         }
     });

@@ -3,6 +3,7 @@ package ondutyScheduler
 import ondutyScheduler.nonAvailabilities.EmployeePageTO
 import ondutyScheduler.nonAvailabilities.NonAvailabilitiesBCI
 import ondutyScheduler.nonAvailabilities.NonAvailabilityNoticeTO
+import ondutyScheduler.nonAvailabilities.WorkloadPreferenceTO
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -30,5 +31,10 @@ class EmployeeController(
     @DeleteMapping("employee/{employeeId}/nonAvailabilityNotices/{id}")
     fun deleteNonAvailabilityNotice(@PathVariable("employeeId") employeeId: Long, @PathVariable("id") nonAvailabilityNoticeId: Long): ResponseEntity<List<NonAvailabilityNoticeTO>> {
         return ResponseEntity.of(nonAvailabilitiesBCI.deleteNonAvailabilityNotice(employeeId, nonAvailabilityNoticeId))
+    }
+
+    @PostMapping("employee/{employeeId}/workloadPreference")
+    fun saveWorkloadPreference(@PathVariable("employeeId") employeeId: Long, @RequestBody workloadPreferenceTO: WorkloadPreferenceTO): ResponseEntity<WorkloadPreferenceTO> {
+        return ResponseEntity.of(nonAvailabilitiesBCI.saveWorkloadPreference(employeeId, workloadPreferenceTO))
     }
 }

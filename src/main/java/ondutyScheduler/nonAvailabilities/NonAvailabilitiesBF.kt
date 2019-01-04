@@ -1,6 +1,7 @@
 package ondutyScheduler.nonAvailabilities
 
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.util.*
 
@@ -20,17 +21,25 @@ data class NonAvailabilityNoticeTO(
         val regardingSchedules: List<Long>
 )
 
+data class WorkloadPreferenceTO(
+        val minWorkload: Int,
+        val maxWorkload: Int
+)
+
 data class EmployeePageTO(
         val name: String,
+        val workloadPreference: WorkloadPreferenceTO,
         val nonAvailabilityNotices: List<NonAvailabilityNoticeTO>,
         val allExistingSchedules: List<ScheduleTO>,
         val allowedSchedules: List<Long>
 )
 
+
 interface NonAvailabilitiesBCI {
     fun employeePage(employeeId: Long): Optional<EmployeePageTO>;
     fun addNonAvailabilityNotice(employeeId: Long, nonAvailabilityNoticeTO: NonAvailabilityNoticeTO): Optional<List<NonAvailabilityNoticeTO>>
     fun deleteNonAvailabilityNotice(employeeId: Long, id: Long): Optional<List<NonAvailabilityNoticeTO>>
+    fun saveWorkloadPreference(employeeId: Long, workloadPreferenceTO: WorkloadPreferenceTO): Optional<WorkloadPreferenceTO>
 }
 
 @Component
@@ -38,7 +47,7 @@ class NonAvailabilitiesBF(
         private val employeeEM: EmployeeEM,
         private val scheduleEM: ScheduleEM,
         private val nonAvailabilityNoticeEM: NonAvailabilityNoticeEM
-): NonAvailabilitiesBCI {
+) : NonAvailabilitiesBCI {
 
     override fun employeePage(employeeId: Long): Optional<EmployeePageTO> {
         val employeeBE = employeeEM.findById(employeeId)
@@ -46,6 +55,7 @@ class NonAvailabilitiesBF(
         return employeeBE.map {
             EmployeePageTO(
                     it.name,
+                    WorkloadPreferenceTO(it.minWorkload, it.maxWorkload),
                     it.nonAvailabilityNotices.map(this::mapNonAvailabilityNoticeBE),
                     schedulesBEs.map(this::mapScheduleBE),
                     schedulesBEs.map { it.id }
@@ -72,6 +82,19 @@ class NonAvailabilitiesBF(
         }
     }
 
+    @Transactional
+    override fun saveWorkloadPreference(employeeId: Long, workloadPreferenceTO: WorkloadPreferenceTO): Optional<WorkloadPreferenceTO> {
+        if (workloadPreferenceTO.minWorkload < 0 || workloadPreferenceTO.maxWorkload < 100 || workloadPreferenceTO.minWorkload > workloadPreferenceTO.maxWorkload) {
+            throw Exception()
+        }
+        val employeeBE = employeeEM.findById(employeeId)
+        return employeeBE.map {
+            it.maxWorkload = workloadPreferenceTO.maxWorkload
+            it.minWorkload = workloadPreferenceTO.minWorkload
+            return@map WorkloadPreferenceTO(it.minWorkload, it.maxWorkload)
+        }
+    }
+
     private fun mapNonAvailabilityNoticeBE(notice: NonAvailabilityNoticeBE): NonAvailabilityNoticeTO {
         return NonAvailabilityNoticeTO(
                 notice.id,
@@ -93,7 +116,7 @@ class NonAvailabilitiesBF(
         )
     }
 
-    private fun mapScheduleBE(schedule:  ScheduleBE): ScheduleTO {
+    private fun mapScheduleBE(schedule: ScheduleBE): ScheduleTO {
         return ScheduleTO(
                 schedule.id,
                 schedule.name
