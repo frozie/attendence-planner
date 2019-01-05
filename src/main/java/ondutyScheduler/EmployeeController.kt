@@ -37,4 +37,5 @@ class EmployeeController(
     fun saveWorkloadPreference(@PathVariable("employeeId") employeeId: Long, @RequestBody workloadPreferenceTO: WorkloadPreferenceTO): ResponseEntity<WorkloadPreferenceTO> {
         return ResponseEntity.of(nonAvailabilitiesBCI.saveWorkloadPreference(employeeId, workloadPreferenceTO))
     }
+
 }

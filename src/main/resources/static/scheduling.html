@@ -1,0 +1,41 @@
+<html>
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+
+<div id="app">
+    <h1>Planung</h1>
+    <div>
+        Start am <input v-model="schedulingInput.starting"/> bis zum <input v-model="schedulingInput.ending"/>.
+        <button>&Aumlndern</button>
+    </div>
+    <div>
+
+    </div>
+</div>
+
+<script>
+    const app = new Vue({
+        el: '#app',
+        data: {
+            schedulingInput: {},
+            employees: []
+        },
+        methods: {
+            created () {
+                console.log("fetching");
+                fetch('http://localhost:8080/employee/')
+                    .then(resp => resp.json())
+                    .then(json => {
+                        this.employees = json
+                    });
+                fetch('http://localhost:8080/onCallScheduling/prepare?starting=2019-01-05T00:00:00&ending=2019-01-18T01:00:00')
+                    .then(resp => resp.json())
+                    .then(json => {
+                        this.schedulingInput = json
+                    });
+                console.log("endfetching");
+            }
+        }
+    });
+</script>
+
+</html>

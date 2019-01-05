@@ -34,12 +34,22 @@ data class EmployeePageTO(
         val allowedSchedules: List<Long>
 )
 
+data class NamedEmployeeTO(
+        val name: String,
+        val id: Long
+)
+
 
 interface NonAvailabilitiesBCI {
     fun employeePage(employeeId: Long): Optional<EmployeePageTO>;
     fun addNonAvailabilityNotice(employeeId: Long, nonAvailabilityNoticeTO: NonAvailabilityNoticeTO): Optional<List<NonAvailabilityNoticeTO>>
     fun deleteNonAvailabilityNotice(employeeId: Long, id: Long): Optional<List<NonAvailabilityNoticeTO>>
     fun saveWorkloadPreference(employeeId: Long, workloadPreferenceTO: WorkloadPreferenceTO): Optional<WorkloadPreferenceTO>
+    fun getAllEmployees(): List<NamedEmployeeTO>
+}
+
+interface NonAvailabilitiesICI {
+
 }
 
 @Component
@@ -47,7 +57,7 @@ class NonAvailabilitiesBF(
         private val employeeEM: EmployeeEM,
         private val scheduleEM: ScheduleEM,
         private val nonAvailabilityNoticeEM: NonAvailabilityNoticeEM
-) : NonAvailabilitiesBCI {
+) : NonAvailabilitiesBCI, NonAvailabilitiesICI {
 
     override fun employeePage(employeeId: Long): Optional<EmployeePageTO> {
         val employeeBE = employeeEM.findById(employeeId)
@@ -92,6 +102,15 @@ class NonAvailabilitiesBF(
             it.maxWorkload = workloadPreferenceTO.maxWorkload
             it.minWorkload = workloadPreferenceTO.minWorkload
             return@map WorkloadPreferenceTO(it.minWorkload, it.maxWorkload)
+        }
+    }
+
+    override fun getAllEmployees(): List<NamedEmployeeTO> {
+        return employeeEM.findAll().map {
+            NamedEmployeeTO(
+                    it.name,
+                    it.id
+            )
         }
     }
 
