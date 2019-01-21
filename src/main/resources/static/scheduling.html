@@ -1,18 +1,68 @@
 <html>
-<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
 
 <div id="app">
-    <h1>Planung</h1>
-    <div>
-        Start am <input v-model="schedulingInput.starting"/> bis zum <input v-model="schedulingInput.ending"/>.
-        <button>&Aumlndern</button>
-    </div>
-    <div>
+  <v-app>
+    <v-content>
+      <v-container>
+        <h1>Planung</h1>
+        <div>
+          Start am <input v-model="schedulingInput.starting"/> bis zum <input v-model="schedulingInput.ending"/>.
+          <button>&Aumlndern</button>
+        </div>
+        <div>
 
-    </div>
+          <v-list
+              three-line
+          >
+            <v-subheader>Escalation</v-subheader>
+            <v-list-tile @click="" v-for="employee in employees" :key="employee.id">
+              <v-list-tile-action>
+                <v-checkbox
+                    v-model="schedulingInput.escalationEmployees"
+                    :value="employee.id"
+                ></v-checkbox>
+              </v-list-tile-action>
+
+              <v-list-tile-content>
+                <v-list-tile-title>{{employee.name}}</v-list-tile-title>
+              </v-list-tile-content>
+            </v-list-tile>
+          </v-list>
+
+          <v-list
+              three-line
+          >
+            <v-subheader>Normal</v-subheader>
+            <v-list-tile @click="" v-for="employee in employees" :key="employee.id">
+              <v-list-tile-action>
+                <v-checkbox
+                    v-model="schedulingInput.normalEmployees"
+                    :value="employee.id"
+                ></v-checkbox>
+              </v-list-tile-action>
+
+              <v-list-tile-content>
+                <v-list-tile-title>{{employee.name}}</v-list-tile-title>
+              </v-list-tile-content>
+            </v-list-tile>
+          </v-list>
+        </div>
+        {{schedulingInput.escalationEmployees}} {{schedulingInput.normalEmployees}}
+      </v-container>
+    </v-content>
+  </v-app>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
+
 <script>
+  console.log("test");
     const app = new Vue({
         el: '#app',
         data: {
@@ -20,22 +70,23 @@
             employees: []
         },
         methods: {
-            created () {
-                console.log("fetching");
-                fetch('http://localhost:8080/employee/')
-                    .then(resp => resp.json())
-                    .then(json => {
-                        this.employees = json
-                    });
-                fetch('http://localhost:8080/onCallScheduling/prepare?starting=2019-01-05T00:00:00&ending=2019-01-18T01:00:00')
-                    .then(resp => resp.json())
-                    .then(json => {
-                        this.schedulingInput = json
-                    });
-                console.log("endfetching");
-            }
+
+        },
+        created () {
+            fetch('http://localhost:8080/employee/')
+                .then(resp => resp.json())
+                .then(json => {
+                    this.employees = json
+                    console.log(json)
+                });
+            fetch('http://localhost:8080/onCallScheduling/prepare?starting=2019-01-05T00:00:00&ending=2019-01-18T01:00:00')
+                .then(resp => resp.json())
+                .then(json => {
+                    this.schedulingInput = json
+                });
         }
     });
+
 </script>
 
 </html>
