@@ -1,7 +1,7 @@
 stages:
   - buildJava
-  #- buildDocker
-  #- deployDev
+  - buildDocker
+  - deployDev
   #- deployProd
 
 variables:
