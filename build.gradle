@@ -42,7 +42,7 @@ compileTestKotlin {
 jar {
     baseName = 'onduty-scheduler'
     version = '0.1.0'
-    mainClassName = 'ondutyScheduler.OnDutySchedulerApplication'
+    mainClassName = 'ondutyScheduler.OnDutySchedulerApplicationKt'
 }
 
 sourceCompatibility = 10

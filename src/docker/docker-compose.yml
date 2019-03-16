@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+
+  onduty-scheduler:
+    image: docker.maibornwolff.de/mw/onduty-scheduler:latest
+    labels:
+      - "traefik.backend=onduty-scheduler"
+      - "traefik.frontend.rule=Host:onduty-scheduler${URL_POSTFIX}.maibornwolff.de"
+    environment:
+      - "JAVA_OPTS=-Xmx256m -Xms128m"
+      - "DB_LINK=db"
+      - "DB_NAME=oncall" #todo use secrets
+      - "DB_USER=oncall"
+      - "DB_PASSWORD=oncallPw"
+    user: ${DOCKER_USER}
+    networks:
+      - docker_default
+    restart: unless-stopped
+    links:
+      - db
+
+  db: #todo we have to create the database and user
+    image: postgres:latest
+    restart: always
+    ports:
+      - 5432:5432
+
+networks:
+  docker_default:
+    external:
+      name: docker_default

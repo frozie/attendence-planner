@@ -7,10 +7,10 @@ stages:
 variables:
   DOCKER_REGISTRY: "docker.maibornwolff.de"
   DOCKER_ARTIFACT_URL: "docker.maibornwolff.de/mw/onduty-scheduler:latest"
-  #DOCKER_FILE: "src/docker/Dockerfile"
-  #DOCKER_COMPOSE_FILE: "src/docker/example_compose.yml"
+  DOCKER_FILE: "src/docker/Dockerfile"
+  DOCKER_COMPOSE_FILE: "src/docker/docker-compose.yml"
   PROJECTNAME: "onduty-scheduler"
-  #ENVIRONMENT_URL_DEV: "https://exampledockerapp-dev.maibornwolff.de/swagger-ui.html"
+  ENVIRONMENT_URL_DEV: "https://onduty-scheduler-dev.maibornwolff.de/"
   #ENVIRONMENT_URL_PROD: "https://exampledockerapp.maibornwolff.de/swagger-ui.html"
 
   # When using dind, it's wise to use the overlayfs driver for
@@ -46,43 +46,43 @@ buildJava:
     when: always
     expire_in: 1 day
 
-#
-#buildDocker:
-#  stage: buildDocker
-#  image: docker:latest
-#  services:
-#    - docker:dind
-#  tags:
-#    - build
-#  dependencies:
-#    - buildJava
-#  script:
-#    - docker build -t "$DOCKER_ARTIFACT_URL" -f "$DOCKER_FILE" .
-#    - docker login -u="$ARTIFACTS_USER" -p="$ARTIFACTS_PASSWORD" "$DOCKER_REGISTRY"
-#    - docker push "$DOCKER_ARTIFACT_URL"
-#
-## Deploys the docker container to DOCKER-DEV-01
-## - The runner on DOCKER-DEV-01 must be activated for this project, the tag
-##   "development" makes sure this runner on DOCKER-DEV-01 is used
-## - The variables are used within example_compose.yml. to set URL, use the
-##   correct configuration and let the container run with a defined user
-#deployDev:
-#  stage: deployDev
-#  image: docker.maibornwolff.de/mw/docker-compose:latest
-#  variables:
-#    URL_POSTFIX: "-dev"
-#    DOCKER_USER: "1000"
-#  tags:
-#    - deploydev
-#  script:
-#    - docker login -u="$ARTIFACTS_USER" -p="$ARTIFACTS_PASSWORD" "$DOCKER_REGISTRY"
-#    - docker-compose -p "$PROJECTNAME" -f "$DOCKER_COMPOSE_FILE" stop
-#    - docker-compose -p "$PROJECTNAME" -f "$DOCKER_COMPOSE_FILE" pull
-#    - docker-compose -p "$PROJECTNAME" -f "$DOCKER_COMPOSE_FILE" up -d
-#  environment:
-#    name: development
-#    url: "$ENVIRONMENT_URL_DEV"
-#
+
+buildDocker:
+  stage: buildDocker
+  image: docker:latest
+  services:
+    - docker:dind
+  tags:
+    - build
+  dependencies:
+    - buildJava
+  script:
+    - docker build -t "$DOCKER_ARTIFACT_URL" -f "$DOCKER_FILE" .
+    - docker login -u="$ARTIFACTS_USER" -p="$ARTIFACTS_PASSWORD" "$DOCKER_REGISTRY"
+    - docker push "$DOCKER_ARTIFACT_URL"
+
+# Deploys the docker container to DOCKER-DEV-01
+# - The runner on DOCKER-DEV-01 must be activated for this project, the tag
+#   "development" makes sure this runner on DOCKER-DEV-01 is used
+# - The variables are used within example_compose.yml. to set URL, use the
+#   correct configuration and let the container run with a defined user
+deployDev:
+  stage: deployDev
+  image: docker.maibornwolff.de/mw/docker-compose:latest
+  variables:
+    URL_POSTFIX: "-dev"
+    DOCKER_USER: "1000"
+  tags:
+    - deploydev
+  script:
+    - docker login -u="$ARTIFACTS_USER" -p="$ARTIFACTS_PASSWORD" "$DOCKER_REGISTRY"
+    - docker-compose -p "$PROJECTNAME" -f "$DOCKER_COMPOSE_FILE" stop
+    - docker-compose -p "$PROJECTNAME" -f "$DOCKER_COMPOSE_FILE" pull
+    - docker-compose -p "$PROJECTNAME" -f "$DOCKER_COMPOSE_FILE" up -d
+  environment:
+    name: development
+    url: "$ENVIRONMENT_URL_DEV"
+
 ## Deploys the docker container to production on DOCKER-MUC-01
 ## - The runner on DOCKER-MUC-01 must be activated for this project, the tag
 ##   "production" makes sure this runner on DOCKER-MUC-01 is used
