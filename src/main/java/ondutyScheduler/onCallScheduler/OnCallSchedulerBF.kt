@@ -37,7 +37,7 @@ class OnCallSchedulerBF(
         val nonAvailabilities: NonAvailabilitiesICI
 ): OnCallSchedulerBCI {
     override fun prepareSchedulerInput(starting: LocalDateTime, ending: LocalDateTime): OnCallSchedulerInputTO {
-        val allDays = Stream.iterate(starting.toLocalDate()) { t -> t.plusDays(1) }.takeWhile { d -> d.isBefore(ending.toLocalDate())}
+        val allDays = generateSequence(starting.toLocalDate()) {t -> t.plusDays(1)}.takeWhile { d: LocalDate -> d.isBefore(ending.toLocalDate())}
         val normalDays = ArrayList<LocalDate>()
         val holidays = ArrayList<LocalDate>()
         for (day in allDays) {
